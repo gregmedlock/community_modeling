@@ -9,6 +9,9 @@ import cobra.flux_analysis.variability
 import libsbml
 import os
 
+import numpy as np
+import matplotlib.pyplot as plt
+
 #def combine_models(model1,model2):
 
 def essential_exchanges(model, exchange_list):
@@ -16,18 +19,26 @@ def essential_exchanges(model, exchange_list):
                     model, the_components = exchange_list, solver = 'cglpk')
     return essential
 
-def get_exchange_list(bigg_model):
-    exchanges = []
+def get_exchange_reaction_list(bigg_model):
+    exchange_reaction_ids = []
     for reaction in bigg_model.reactions:
-        #print reaction.id.endswith('t')
-        if reaction.id.endswith('t'):
-            print reaction.id
-            exchanges.append(reaction.id)
-    return exchanges
+        if reaction.id.startswith('EX_'):
+            exchange_reaction_ids.append(reaction.id)
+    return exchange_reaction_ids
 
-def open_exchanges(model, exchange_list):
+def get_transport_reaction_list(bigg_model,suffix="t"):
+    transport_reaction_ids = []
+    for reaction in bigg_model.reactions:
+        if reaction.id.endswith(suffix):
+            transport_reaction_ids.append(reaction.id)
+    return transport_reaction_ids
+
+def plot_biomass_scatter(biomass_dict,xlabel):
+
+
+def open_exchanges(model):
     for reaction in model.reactions:
-        if reaction.id in exchange_list:
+        if reaction.id.startswith('EX_'):
             reaction.lower_bound = -10
             #reaction.upper_bound = 1000
 
@@ -41,38 +52,32 @@ yeast_model = cobra.io.read_sbml_model(yeast_path)
 maritima_model = cobra.io.read_sbml_model(maritima_path)
 os.chdir('..')
 
+print("--------------------------------------------------------------")
+print("Determining solutions without changing parameters")
 print(yeast_model.optimize())
 print(maritima_model.optimize())
+
+print("--------------------------------------------------------------")
+print("Finding transport reactions")
+yeast_transport_reactions = get_transport_reaction_list(yeast_model)
+maritima_transport_reactions = get_transport_reaction_list(maritima_model)
+print maritima_transport_reactions
+print yeast_transport_reactions
+
 print("--------------------------------------------------------------")
 print("Finding exchange reactions")
-yeast_exchanges = get_exchange_list(yeast_model)
-maritima_exchanges = get_exchange_list(maritima_model)
-
-print maritima_exchanges
-print yeast_exchanges
-
-# print("--------------------------------------------------------------")
-# print("Determining essential exchange reactions")
-# yeast_essential = essential_exchanges(yeast_model, yeast_exchanges)
-# maritima_essential = essential_exchanges(maritima_model, maritima_exchanges)
-#
-# print("yeast essential exchanges")
-# print yeast_essential
-# print("maritima essential exchanges")
-# print maritima_essential
+yeast_exchange_reactions = get_exchange_reaction_list(yeast_model)
+maritima_exchange_reactions = get_exchange_reaction_list(maritima_model)
+print maritima_exchange_reactions
+print yeast_exchange_reactions
 
 # Open exchange reactions necessary for yeast, then open all yeast essential
 # exchanges in the maritima model
-open_exchanges(yeast_model, yeast_exchanges)
-open_exchanges(maritima_model, maritima_exchanges)
-#print(yeast_model.optimize())
-#print( [reaction.objective_coefficient for reaction in yeast_model.reactions] )
-#print (cobra.flux_analysis.reaction.assess(yeast_model,yeast_model.reactions.get_by_id('BIOMASS_SC5_notrace')))
+#open_exchanges(yeast_model)
+#open_exchanges(maritima_model)
 
-yeast_model.reactions.get_by_id('BIOMASS_SC5_notrace').objective_coefficient = 1
-single_objective_solution = yeast_model.optimize()
-print(single_objective_solution)
-yeast_model.reactions.get_by_id('ETOHt').objective_coefficient = 1
-print( [reaction.objective_coefficient for reaction in yeast_model.reactions] )
-multi_objective_solution = yeast_model.optimize()
-print(multi_objective_solution)
+# yeast_model.reactions.get_by_id('BIOMASS_SC5_notrace').objective_coefficient = 1
+# single_objective_solution = yeast_model.optimize()
+# print(single_objective_solution)
+# yeast_model.reactions.get_by_id('ETOHt').objective_coefficient = 0
+# ethanol_transport = yeast_model.reactions.get_by_id('ETOHt')
