@@ -2,12 +2,8 @@
 # Combines two genome-scale metabolic network reconstructions
 
 import cobra
-import cobra.flux_analysis.reaction
-import cobra.flux_analysis.essentiality
-import cobra.flux_analysis.variability
 import libsbml
 import os
-
 
 def stitch_models(base_model,add_model,model_suffixes=['_mod1','_mod2']):
     model_1 = base_model.copy()
@@ -59,17 +55,18 @@ def stitch_models(base_model,add_model,model_suffixes=['_mod1','_mod2']):
             if reaction.id not in [i.id for i in model_1.reactions]:
                 new_reaction = reaction.copy()
                 model_1.add_reaction(new_reaction)
-
+    model_1.repair()
     return model_1
 
-
-os.chdir('../models')
-yeast_file = 'iMM904.xml'
-maritima_file = 'iLJ478.xml'
-yeast_path = '/'.join([os.getcwd(),yeast_file])
-maritima_path = '/'.join([os.getcwd(),maritima_file])
-yeast_model = cobra.io.sbml3.read_sbml_model(yeast_path)
-maritima_model = cobra.io.sbml3.read_sbml_model(maritima_path)
-os.chdir('..')
-
-stitched_model = stitch_models(yeast_model,maritima_model)
+if __name__ == '__main__':
+    os.chdir('../models')
+    yeast_file = 'iMM904.xml'
+    maritima_file = 'iLJ478.xml'
+    yeast_path = '/'.join([os.getcwd(),yeast_file])
+    maritima_path = '/'.join([os.getcwd(),maritima_file])
+    yeast_model = cobra.io.sbml3.read_sbml_model(yeast_path)
+    maritima_model = cobra.io.sbml3.read_sbml_model(maritima_path)
+    os.chdir('..')
+    stitched_model = stitch_models(yeast_model,maritima_model)
+else:
+    print 'loading model_stitcher.py'

@@ -8,9 +8,10 @@ import cobra.flux_analysis.essentiality
 import cobra.flux_analysis.variability
 import libsbml
 import os
-
 import numpy as np
 import matplotlib.pyplot as plt
+
+from model_stitcher import stitch_models
 
 #def combine_models(model1,model2):
 
@@ -33,7 +34,7 @@ def get_transport_reaction_list(bigg_model,suffix="t"):
             transport_reaction_ids.append(reaction.id)
     return transport_reaction_ids
 
-def plot_biomass_scatter(biomass_dict,xlabel):
+#def plot_biomass_scatter(biomass_dict,xlabel):
 
 
 def open_exchanges(model):
@@ -70,6 +71,22 @@ yeast_exchange_reactions = get_exchange_reaction_list(yeast_model)
 maritima_exchange_reactions = get_exchange_reaction_list(maritima_model)
 print maritima_exchange_reactions
 print yeast_exchange_reactions
+
+print("--------------------------------------------------------------")
+print("Stitching models, performing FBA on stitched model")
+stitched_model = stitch_models(yeast_model,maritima_model)
+
+#print stitched_model.reactions
+stitched_model.reactions.get_by_id('BIOMASS_SC5_notrace_mod1').objective_coefficient = 1
+stitched_model.reactions.get_by_id('BIOMASS_Ecoli_TM_mod2').objective_coefficient = 0
+stitched_model_solution = stitched_model.optimize()
+print 'objective is ',stitched_model.objective
+print 'Flux through yeast biomass is ',stitched_model_solution.x_dict['BIOMASS_SC5_notrace_mod1']
+print 'Flux through thermotoga biomass is ',stitched_model_solution.x_dict['BIOMASS_Ecoli_TM_mod2']
+
+print("--------------------------------------------------------------")
+print("Opening all exchange reactions, simulating abundance ratios")
+
 
 # Open exchange reactions necessary for yeast, then open all yeast essential
 # exchanges in the maritima model
